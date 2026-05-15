@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Plocha – převody jednotek a výpočty</title>
+  <style>
+    :root{
+      --bg1:#ecfeff;
+      --bg2:#dcfce7;
+      --bg3:#fef3c7;
+      --panel:#ffffff;
+      --dark:#0f172a;
+      --muted:#475569;
+      --line:#cbd5e1;
+      --blue:#2563eb;
+      --green:#16a34a;
+      --orange:#ea580c;
+      --purple:#7c3aed;
+      --pink:#db2777;
+      --cyan:#0891b2;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2), var(--bg3));
+      color:var(--dark);
+    }
+
+    .page{
+      max-width:1250px;
+      margin:0 auto;
+      padding:24px;
+    }
+
+    header{
+      background:rgba(255,255,255,0.90);
+      border:2px solid rgba(255,255,255,0.95);
+      box-shadow:0 18px 40px rgba(15,23,42,0.13);
+      border-radius:28px;
+      padding:28px;
+      text-align:center;
+      margin-bottom:22px;
+    }
+
+    h1{
+      margin:0 0 10px;
+      font-size:42px;
+      letter-spacing:1px;
+      color:#14532d;
+    }
+
+    .subtitle{
+      font-size:18px;
+      line-height:1.5;
+      color:var(--muted);
+      max-width:980px;
+      margin:0 auto;
+    }
+
+    .author{
+      margin-top:14px;
+      font-size:15px;
+      color:#334155;
+      font-weight:bold;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1.35fr;
+      gap:22px;
+      align-items:start;
+    }
+
+    .card{
+      background:rgba(255,255,255,0.93);
+      border-radius:26px;
+      padding:22px;
+      box-shadow:0 18px 35px rgba(15,23,42,0.12);
+      border:1px solid rgba(255,255,255,0.9);
+    }
+
+    .card h2{
+      margin:0 0 16px;
+      font-size:25px;
+      color:#0f172a;
+    }
+
+    .field-wrap{
+      background:linear-gradient(180deg,#bbf7d0,#86efac);
+      border:3px solid #15803d;
+      border-radius:22px;
+      padding:20px;
+      margin-bottom:18px;
+    }
+
+    .field-title{
+      font-weight:bold;
+      font-size:20px;
+      text-align:center;
+      margin-bottom:12px;
+      color:#14532d;
+    }
+
+    .field{
+      position:relative;
+      height:250px;
+      background:
+        linear-gradient(90deg, rgba(21,128,61,0.18) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(21,128,61,0.18) 1px, transparent 1px),
+        #dcfce7;
+      background-size:25px 25px;
+      border:4px solid #166534;
+      border-radius:18px;
+      overflow:hidden;
+    }
+
+    .area-shape{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:55%;
+      height:48%;
+      background:linear-gradient(135deg,#2563eb,#06b6d4);
+      border:4px solid #ffffff;
+      border-radius:18px;
+      box-shadow:0 12px 25px rgba(15,23,42,0.25);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:white;
+      font-size:22px;
+      font-weight:bold;
+      text-align:center;
+      padding:12px;
+      transition:.25s;
+    }
+
+    .dimension{
+      position:absolute;
+      color:#14532d;
+      font-weight:bold;
+      background:rgba(255,255,255,0.85);
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid #86efac;
+      font-size:14px;
+    }
+
+    .dim-a{ bottom:12px; left:50%; transform:translateX(-50%); }
+    .dim-b{ right:12px; top:50%; transform:translateY(-50%); }
+
+    .display{
+      background:#020617;
+      color:#22c55e;
+      border-radius:18px;
+      padding:18px;
+      text-align:center;
+      font-size:28px;
+      font-weight:bold;
+      letter-spacing:1px;
+      box-shadow: inset 0 0 20px rgba(34,197,94,0.22);
+      margin:18px 0;
+      min-height:70px;
+    }
+
+    label{
+      display:block;
+      font-weight:bold;
+      margin-bottom:7px;
+      font-size:15px;
+    }
+
+    input, select{
+      width:100%;
+      padding:13px 15px;
+      border-radius:14px;
+      border:2px solid var(--line);
+      font-size:17px;
+      background:#fff;
+      outline:none;
+    }
+
+    input:focus, select:focus{
+      border-color:#16a34a;
+      box-shadow:0 0 0 4px rgba(22,163,74,0.14);
+    }
+
+    .input-row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .mode-box{
+      background:#f0fdf4;
+      border:1px solid #bbf7d0;
+      padding:15px;
+      border-radius:18px;
+      margin-bottom:16px;
+    }
+
+    .mode-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    .hint{
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+      margin-top:8px;
+    }
+
+    .quick{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:14px;
+    }
+
+    button{
+      border:none;
+      border-radius:999px;
+      padding:10px 14px;
+      font-size:15px;
+      font-weight:bold;
+      cursor:pointer;
+      background:#dcfce7;
+      color:#14532d;
+      transition:.2s;
+    }
+
+    button:hover{
+      transform:translateY(-1px);
+      background:#bbf7d0;
+    }
+
+    .results{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap:12px;
+    }
+
+    .unit{
+      border-radius:18px;
+      padding:15px;
+      color:white;
+      min-height:105px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      box-shadow:0 10px 20px rgba(15,23,42,0.12);
+    }
+
+    .unit:nth-child(1){background:linear-gradient(135deg,#2563eb,#1d4ed8);}
+    .unit:nth-child(2){background:linear-gradient(135deg,#0891b2,#0e7490);}
+    .unit:nth-child(3){background:linear-gradient(135deg,#16a34a,#15803d);}
+    .unit:nth-child(4){background:linear-gradient(135deg,#ea580c,#c2410c);}
+    .unit:nth-child(5){background:linear-gradient(135deg,#7c3aed,#6d28d9);}
+    .unit:nth-child(6){background:linear-gradient(135deg,#db2777,#be185d);}
+    .unit:nth-child(7){background:linear-gradient(135deg,#0f766e,#115e59);}
+    .unit:nth-child(8){background:linear-gradient(135deg,#475569,#334155);}
+    .unit:nth-child(9){background:linear-gradient(135deg,#9333ea,#7e22ce);}
+    .unit:nth-child(10){background:linear-gradient(135deg,#dc2626,#b91c1c);}
+    .unit:nth-child(11){background:linear-gradient(135deg,#ca8a04,#a16207);}
+    .unit:nth-child(12){background:linear-gradient(135deg,#4f46e5,#4338ca);}
+
+    .unit .top{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:flex-start;
+    }
+
+    .symbol{
+      font-size:22px;
+      font-weight:bold;
+    }
+
+    .spoken{
+      font-size:14px;
+      opacity:.9;
+      text-align:right;
+    }
+
+    .value{
+      font-size:20px;
+      font-weight:bold;
+      word-break:break-word;
+      margin-top:12px;
+    }
+
+    .full{
+      font-size:13px;
+      opacity:.92;
+      margin-top:4px;
+    }
+
+    .explain{
+      margin-top:22px;
+      background:#fff7ed;
+      border:2px solid #fed7aa;
+      border-radius:22px;
+      padding:18px;
+      line-height:1.55;
+      font-size:16px;
+    }
+
+    .explain strong{
+      color:#9a3412;
+    }
+
+    .formula{
+      display:grid;
+      grid-template-columns: repeat(2,1fr);
+      gap:10px;
+      margin-top:14px;
+    }
+
+    .formula div{
+      background:#ffffff;
+      border:1px solid #fed7aa;
+      border-radius:14px;
+      padding:11px;
+      text-align:center;
+      font-weight:bold;
+      color:#7c2d12;
+    }
+
+    .law{
+      margin-top:14px;
+      background:#eff6ff;
+      border:2px solid #bfdbfe;
+      border-radius:18px;
+      padding:14px;
+      font-size:15px;
+      line-height:1.5;
+    }
+
+    footer{
+      text-align:center;
+      margin-top:18px;
+      color:#475569;
+      font-size:14px;
+    }
+
+    @media (max-width:950px){
+      .grid{ grid-template-columns:1fr; }
+      h1{ font-size:34px; }
+      .results{ grid-template-columns:1fr; }
+      .input-row,.mode-grid,.formula{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <h1>PLOCHA / OBSAH</h1>
+      <p class="subtitle">
+        Plocha neboli obsah nám říká, jak velká je část roviny. Můžeme měřit plochu sešitu, stolu,
+        pokoje, zahrady, pozemku, podlahy, stěny nebo hřiště. Plocha se zapisuje ve čtverečních jednotkách,
+        například v cm², m² nebo km².
+      </p>
+      <p class="subtitle" style="margin-top:10px;">
+        <strong>K čemu je to dobré?</strong> Převody a výpočty plochy využiješ při nákupu podlahy, koberce,
+        obkladů, barvy na stěnu, při měření zahrady, pozemku, mapy i při technickém kreslení.
+      </p>
+      <div class="author">Autorka: Mgr. Ivana Langweilová</div>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Model plochy</h2>
+
+        <div class="field-wrap">
+          <div class="field-title">PLOCHA JAKO ČÁST ROVINY</div>
+          <div class="field">
+            <div class="area-shape" id="areaShape">1 m²</div>
+            <div class="dimension dim-a" id="dimA">a = 1 m</div>
+            <div class="dimension dim-b" id="dimB">b = 1 m</div>
+          </div>
+        </div>
+
+        <div class="display" id="mainDisplay">1.000 m²</div>
+
+        <div class="mode-box">
+          <label for="modeSelect">Co chceš dělat?</label>
+          <select id="modeSelect">
+            <option value="convert" selected>Zadat hotovou plochu a převést ji na jiné jednotky</option>
+            <option value="rectangle">Vypočítat plochu obdélníku: S = a · b</option>
+            <option value="square">Vypočítat plochu čtverce: S = a²</option>
+            <option value="triangle">Vypočítat plochu trojúhelníku: S = (a · vₐ) / 2</option>
+            <option value="circle">Vypočítat plochu kruhu: S = π · r²</option>
+          </select>
+
+          <div id="convertBox">
+            <div class="input-row" style="margin-top:14px;">
+              <div>
+                <label for="valueInput">Zadej plochu:</label>
+                <input id="valueInput" type="number" step="any" value="1" min="0" />
+              </div>
+              <div>
+                <label for="unitSelect">Vyber jednotku:</label>
+                <select id="unitSelect">
+                  <optgroup label="Školní jednotky plochy">
+                    <option value="mm2">mm² – milimetr čtvereční</option>
+                    <option value="cm2">cm² – centimetr čtvereční</option>
+                    <option value="dm2">dm² – decimetr čtvereční</option>
+                    <option value="m2" selected>m² – metr čtvereční</option>
+                    <option value="a">a – ar</option>
+                    <option value="ha">ha – hektar</option>
+                    <option value="km2">km² – kilometr čtvereční</option>
+                  </optgroup>
+                  <optgroup label="Cizí jednotky plochy">
+                    <option value="in2">in² – square inch / čtvereční palec</option>
+                    <option value="ft2">ft² – square foot / čtvereční stopa</option>
+                    <option value="yd2">yd² – square yard / čtvereční yard</option>
+                    <option value="acre">acre – akr</option>
+                    <option value="mi2">mi² – square mile / čtvereční míle</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div id="calcBox" style="display:none;">
+            <div class="mode-grid">
+              <div id="inputABox">
+                <label for="inputA" id="labelA">Strana a [m]:</label>
+                <input id="inputA" type="number" step="any" value="1" min="0" />
+              </div>
+              <div id="inputBBox">
+                <label for="inputB" id="labelB">Strana b [m]:</label>
+                <input id="inputB" type="number" step="any" value="1" min="0" />
+              </div>
+            </div>
+            <div class="hint" id="calcHint">Zadej rozměry v metrech. Výsledek se vypočítá v m² a převede do ostatních jednotek.</div>
+          </div>
+        </div>
+
+        <div class="quick">
+          <button data-v="1" data-u="m2">1 m²</button>
+          <button data-v="100" data-u="cm2">100 cm²</button>
+          <button data-v="1" data-u="dm2">1 dm²</button>
+          <button data-v="1" data-u="a">1 ar</button>
+          <button data-v="1" data-u="ha">1 ha</button>
+          <button data-v="1" data-u="acre">1 acre</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Přepočet plochy na jiné jednotky</h2>
+
+        <div class="results" id="results"></div>
+
+        <div class="explain">
+          <strong>Zapamatuj si:</strong>
+          U jednotek plochy nepřevádíme jen jedním krokem jako u délky. Protože plocha má dva rozměry,
+          při převodu se převodní číslo násobí samo sebou. Například 1 m = 100 cm, ale
+          <strong>1 m² = 10 000 cm²</strong>.
+          <div class="formula">
+            <div>Obdélník: S = a · b</div>
+            <div>Čtverec: S = a²</div>
+            <div>Trojúhelník: S = (a · vₐ) / 2</div>
+            <div>Kruh: S = π · r²</div>
+            <div>1 m² = 100 dm²</div>
+            <div>1 m² = 10 000 cm²</div>
+            <div>1 ar = 100 m²</div>
+            <div>1 ha = 10 000 m²</div>
+          </div>
+
+          <div class="law">
+            <strong>Důležité pravidlo pro převody plochy:</strong><br>
+            Když převádíš délku z metrů na centimetry, násobíš 100.
+            Když ale převádíš plochu z m² na cm², násobíš 100 · 100 = 10 000.
+            Proto mají jednotky plochy značku se „čtverečkem“: mm², cm², dm², m², km².
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Webová učební pomůcka pro převody jednotek plochy a základní výpočty obsahu.
+    </footer>
+  </div>
+
+  <script>
+    const modeSelect = document.getElementById("modeSelect");
+    const convertBox = document.getElementById("convertBox");
+    const calcBox = document.getElementById("calcBox");
+    const valueInput = document.getElementById("valueInput");
+    const unitSelect = document.getElementById("unitSelect");
+    const inputA = document.getElementById("inputA");
+    const inputB = document.getElementById("inputB");
+    const inputBBox = document.getElementById("inputBBox");
+    const labelA = document.getElementById("labelA");
+    const labelB = document.getElementById("labelB");
+    const calcHint = document.getElementById("calcHint");
+    const display = document.getElementById("mainDisplay");
+    const results = document.getElementById("results");
+    const areaShape = document.getElementById("areaShape");
+    const dimA = document.getElementById("dimA");
+    const dimB = document.getElementById("dimB");
+
+    const units = {
+      mm2:  { symbol:"mm²", spoken:"milimetr čtvereční", full:"milimetr čtvereční", toM2:0.000001 },
+      cm2:  { symbol:"cm²", spoken:"centimetr čtvereční", full:"centimetr čtvereční", toM2:0.0001 },
+      dm2:  { symbol:"dm²", spoken:"decimetr čtvereční", full:"decimetr čtvereční", toM2:0.01 },
+      m2:   { symbol:"m²", spoken:"metr čtvereční", full:"metr čtvereční", toM2:1 },
+      a:    { symbol:"a", spoken:"ar", full:"ar", toM2:100 },
+      ha:   { symbol:"ha", spoken:"hektar", full:"hektar", toM2:10000 },
+      km2:  { symbol:"km²", spoken:"kilometr čtvereční", full:"kilometr čtvereční", toM2:1000000 },
+      in2:  { symbol:"in²", spoken:"čtvereční palec", full:"square inch", toM2:0.00064516 },
+      ft2:  { symbol:"ft²", spoken:"čtvereční stopa", full:"square foot", toM2:0.09290304 },
+      yd2:  { symbol:"yd²", spoken:"čtvereční yard", full:"square yard", toM2:0.83612736 },
+      acre: { symbol:"acre", spoken:"akr", full:"acre", toM2:4046.8564224 },
+      mi2:  { symbol:"mi²", spoken:"čtvereční míle", full:"square mile", toM2:2589988.110336 }
+    };
+
+    const outputOrder = ["mm2","cm2","dm2","m2","a","ha","km2","in2","ft2","yd2","acre","mi2"];
+
+    function formatNumber(n, maxDecimals = 6){
+      if (!isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      if (abs !== 0 && (abs >= 1e10 || abs < 1e-6)) {
+        return n.toExponential(4).replace(".", ",");
+      }
+      return new Intl.NumberFormat("cs-CZ", {
+        maximumFractionDigits: maxDecimals,
+        minimumFractionDigits: 0
+      }).format(n);
+    }
+
+    function toM2(value, unit){
+      return value * units[unit].toM2;
+    }
+
+    function fromM2(m2, unit){
+      return m2 / units[unit].toM2;
+    }
+
+    function currentAreaM2(){
+      const mode = modeSelect.value;
+
+      if(mode === "convert"){
+        let value = parseFloat(valueInput.value);
+        if(isNaN(value) || value < 0) value = 0;
+        return toM2(value, unitSelect.value);
+      }
+
+      let a = parseFloat(inputA.value);
+      let b = parseFloat(inputB.value);
+      if(isNaN(a) || a < 0) a = 0;
+      if(isNaN(b) || b < 0) b = 0;
+
+      if(mode === "rectangle"){
+        return a * b;
+      }
+
+      if(mode === "square"){
+        return a * a;
+      }
+
+      if(mode === "triangle"){
+        return (a * b) / 2;
+      }
+
+      if(mode === "circle"){
+        return Math.PI * a * a;
+      }
+
+      return 0;
+    }
+
+    function updateMode(){
+      const mode = modeSelect.value;
+
+      if(mode === "convert"){
+        convertBox.style.display = "block";
+        calcBox.style.display = "none";
+        dimA.textContent = "zadaná plocha";
+        dimB.textContent = "";
+      } else {
+        convertBox.style.display = "none";
+        calcBox.style.display = "block";
+      }
+
+      inputBBox.style.display = "block";
+
+      if(mode === "rectangle"){
+        labelA.textContent = "Strana a [m]:";
+        labelB.textContent = "Strana b [m]:";
+        calcHint.textContent = "Obsah obdélníku vypočítáme podle vzorce S = a · b.";
+      }
+
+      if(mode === "square"){
+        labelA.textContent = "Strana a [m]:";
+        inputBBox.style.display = "none";
+        calcHint.textContent = "Obsah čtverce vypočítáme podle vzorce S = a².";
+      }
+
+      if(mode === "triangle"){
+        labelA.textContent = "Základna a [m]:";
+        labelB.textContent = "Výška vₐ [m]:";
+        calcHint.textContent = "Obsah trojúhelníku vypočítáme podle vzorce S = (a · vₐ) / 2.";
+      }
+
+      if(mode === "circle"){
+        labelA.textContent = "Poloměr r [m]:";
+        inputBBox.style.display = "none";
+        calcHint.textContent = "Obsah kruhu vypočítáme podle vzorce S = π · r².";
+      }
+
+      update();
+    }
+
+    function updateShape(m2){
+      const mode = modeSelect.value;
+      let scale = Math.sqrt(Math.max(0, Math.min(m2, 10000))) / 100;
+      let percent = 25 + scale * 55;
+      percent = Math.max(25, Math.min(80, percent));
+
+      if(mode === "circle"){
+        areaShape.style.borderRadius = "50%";
+        areaShape.style.width = percent + "%";
+        areaShape.style.height = percent + "%";
+      } else if(mode === "triangle"){
+        areaShape.style.borderRadius = "0";
+        areaShape.style.width = "0";
+        areaShape.style.height = "0";
+        areaShape.style.background = "transparent";
+        areaShape.style.borderLeft = "85px solid transparent";
+        areaShape.style.borderRight = "85px solid transparent";
+        areaShape.style.borderBottom = "135px solid #2563eb";
+        areaShape.style.boxShadow = "none";
+        areaShape.textContent = "";
+        return;
+      } else {
+        areaShape.style.borderRadius = "18px";
+        areaShape.style.width = percent + "%";
+        areaShape.style.height = Math.max(28, percent * 0.62) + "%";
+      }
+
+      areaShape.style.background = "linear-gradient(135deg,#2563eb,#06b6d4)";
+      areaShape.style.border = "4px solid #ffffff";
+      areaShape.style.boxShadow = "0 12px 25px rgba(15,23,42,0.25)";
+      areaShape.textContent = formatNumber(m2, 3) + " m²";
+    }
+
+    function update(){
+      const m2 = currentAreaM2();
+      const mode = modeSelect.value;
+
+      display.textContent = `${formatNumber(m2, 6)} m²`;
+
+      if(mode === "convert"){
+        const value = parseFloat(valueInput.value) || 0;
+        display.textContent = `${formatNumber(value, 6)} ${units[unitSelect.value].symbol}`;
+        dimA.textContent = "zadaná plocha";
+        dimB.textContent = formatNumber(m2, 4) + " m²";
+      } else if(mode === "rectangle"){
+        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
+        dimB.textContent = "b = " + formatNumber(parseFloat(inputB.value) || 0, 3) + " m";
+      } else if(mode === "square"){
+        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
+        dimB.textContent = "S = a²";
+      } else if(mode === "triangle"){
+        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
+        dimB.textContent = "vₐ = " + formatNumber(parseFloat(inputB.value) || 0, 3) + " m";
+      } else if(mode === "circle"){
+        dimA.textContent = "r = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
+        dimB.textContent = "S = π · r²";
+      }
+
+      updateShape(m2);
+
+      results.innerHTML = "";
+      outputOrder.forEach(key => {
+        const u = units[key];
+        const converted = fromM2(m2, key);
+
+        const card = document.createElement("div");
+        card.className = "unit";
+        card.innerHTML = `
+          <div class="top">
+            <div class="symbol">${u.symbol}</div>
+            <div class="spoken">${u.spoken}</div>
+          </div>
+          <div>
+            <div class="value">${formatNumber(converted, 8)} ${u.symbol}</div>
+            <div class="full">${u.full}</div>
+          </div>
+        `;
+        results.appendChild(card);
+      });
+    }
+
+    modeSelect.addEventListener("change", updateMode);
+    valueInput.addEventListener("input", update);
+    unitSelect.addEventListener("change", update);
+    inputA.addEventListener("input", update);
+    inputB.addEventListener("input", update);
+
+    document.querySelectorAll("button[data-v]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        modeSelect.value = "convert";
+        updateMode();
+        valueInput.value = btn.dataset.v;
+        unitSelect.value = btn.dataset.u;
+        update();
+      });
+    });
+
+    updateMode();
+  </script>
+</body>
+</html>

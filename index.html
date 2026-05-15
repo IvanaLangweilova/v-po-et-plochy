@@ -12,7 +12,7 @@ html = r"""<!DOCTYPE html>
       --bg2:#dcfce7;
       --bg3:#fef3c7;
       --panel:#ffffff;
-      --dark:#0f172a;
+      --dark:#0f172a;  
       --muted:#475569;
       --line:#cbd5e1;
     }
@@ -761,12 +761,4 @@ html = r"""<!DOCTYPE html>
   </script>
 </body>
 </html>
-"""
 
-(base / "index.html").write_text(html, encoding="utf-8")
-
-zip_path = Path("/mnt/data/plochy_prevody_web_oprava.zip")
-with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
-    z.write(base / "index.html", arcname="index.html")
-
-str(zip_path), str(base / "index.html")

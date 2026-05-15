@@ -1,4 +1,10 @@
-<!DOCTYPE html>
+from pathlib import Path
+import zipfile
+
+base = Path("/mnt/data/plochy_prevody_web_oprava")
+base.mkdir(parents=True, exist_ok=True)
+
+html = r"""<!DOCTYPE html>
 <html lang="cs">
 <head>
   <meta charset="UTF-8" />
@@ -13,12 +19,6 @@
       --dark:#0f172a;
       --muted:#475569;
       --line:#cbd5e1;
-      --blue:#2563eb;
-      --green:#16a34a;
-      --orange:#ea580c;
-      --purple:#7c3aed;
-      --pink:#db2777;
-      --cyan:#0891b2;
     }
 
     *{ box-sizing:border-box; }
@@ -108,7 +108,7 @@
 
     .field{
       position:relative;
-      height:250px;
+      height:285px;
       background:
         linear-gradient(90deg, rgba(21,128,61,0.18) 1px, transparent 1px),
         linear-gradient(0deg, rgba(21,128,61,0.18) 1px, transparent 1px),
@@ -119,41 +119,55 @@
       overflow:hidden;
     }
 
-    .area-shape{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:55%;
-      height:48%;
-      background:linear-gradient(135deg,#2563eb,#06b6d4);
-      border:4px solid #ffffff;
-      border-radius:18px;
-      box-shadow:0 12px 25px rgba(15,23,42,0.25);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color:white;
+    #shapeSvg{
+      width:100%;
+      height:100%;
+      display:block;
+    }
+
+    .shape-main{
+      fill:url(#shapeGradient);
+      stroke:white;
+      stroke-width:4;
+      filter:drop-shadow(0 8px 8px rgba(15,23,42,.25));
+    }
+
+    .shape-line{
+      stroke:#dc2626;
+      stroke-width:4;
+      stroke-linecap:round;
+    }
+
+    .shape-dash{
+      stroke:#dc2626;
+      stroke-width:3;
+      stroke-dasharray:7 6;
+      stroke-linecap:round;
+    }
+
+    .hatch-line{
+      stroke:#991b1b;
+      stroke-width:2;
+      opacity:.75;
+    }
+
+    .shape-label{
+      font-size:20px;
+      font-weight:bold;
+      fill:#0f172a;
+    }
+
+    .shape-small-label{
+      font-size:16px;
+      font-weight:bold;
+      fill:#7f1d1d;
+    }
+
+    .shape-white{
       font-size:22px;
       font-weight:bold;
-      text-align:center;
-      padding:12px;
-      transition:.25s;
+      fill:white;
     }
-
-    .dimension{
-      position:absolute;
-      color:#14532d;
-      font-weight:bold;
-      background:rgba(255,255,255,0.85);
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid #86efac;
-      font-size:14px;
-    }
-
-    .dim-a{ bottom:12px; left:50%; transform:translateX(-50%); }
-    .dim-b{ right:12px; top:50%; transform:translateY(-50%); }
 
     .display{
       background:#020617;
@@ -346,6 +360,18 @@
       line-height:1.5;
     }
 
+    .pi-box{
+      margin-top:14px;
+      background:#fdf2f8;
+      border:2px solid #fbcfe8;
+      border-radius:18px;
+      padding:14px;
+      font-size:17px;
+      font-weight:bold;
+      color:#831843;
+      text-align:center;
+    }
+
     footer{
       text-align:center;
       margin-top:18px;
@@ -384,9 +410,18 @@
         <div class="field-wrap">
           <div class="field-title">PLOCHA JAKO ČÁST ROVINY</div>
           <div class="field">
-            <div class="area-shape" id="areaShape">1 m²</div>
-            <div class="dimension dim-a" id="dimA">a = 1 m</div>
-            <div class="dimension dim-b" id="dimB">b = 1 m</div>
+            <svg id="shapeSvg" viewBox="0 0 500 285" preserveAspectRatio="xMidYMid meet" aria-label="geometrický model plochy">
+              <defs>
+                <linearGradient id="shapeGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#2563eb"/>
+                  <stop offset="100%" stop-color="#06b6d4"/>
+                </linearGradient>
+                <pattern id="hatch" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+                  <line x1="0" y1="0" x2="0" y2="10" class="hatch-line"></line>
+                </pattern>
+              </defs>
+              <g id="shapeLayer"></g>
+            </svg>
           </div>
         </div>
 
@@ -478,6 +513,10 @@
             <div>1 ha = 10 000 m²</div>
           </div>
 
+          <div class="pi-box">
+            Pro výpočty kruhu používáme přibližnou hodnotu: π = 3,14
+          </div>
+
           <div class="law">
             <strong>Důležité pravidlo pro převody plochy:</strong><br>
             Když převádíš délku z metrů na centimetry, násobíš 100.
@@ -507,9 +546,7 @@
     const calcHint = document.getElementById("calcHint");
     const display = document.getElementById("mainDisplay");
     const results = document.getElementById("results");
-    const areaShape = document.getElementById("areaShape");
-    const dimA = document.getElementById("dimA");
-    const dimB = document.getElementById("dimB");
+    const shapeLayer = document.getElementById("shapeLayer");
 
     const units = {
       mm2:  { symbol:"mm²", spoken:"milimetr čtvereční", full:"milimetr čtvereční", toM2:0.000001 },
@@ -540,13 +577,8 @@
       }).format(n);
     }
 
-    function toM2(value, unit){
-      return value * units[unit].toM2;
-    }
-
-    function fromM2(m2, unit){
-      return m2 / units[unit].toM2;
-    }
+    function toM2(value, unit){ return value * units[unit].toM2; }
+    function fromM2(m2, unit){ return m2 / units[unit].toM2; }
 
     function currentAreaM2(){
       const mode = modeSelect.value;
@@ -562,23 +594,72 @@
       if(isNaN(a) || a < 0) a = 0;
       if(isNaN(b) || b < 0) b = 0;
 
-      if(mode === "rectangle"){
-        return a * b;
-      }
-
-      if(mode === "square"){
-        return a * a;
-      }
-
-      if(mode === "triangle"){
-        return (a * b) / 2;
-      }
-
-      if(mode === "circle"){
-        return Math.PI * a * a;
-      }
+      if(mode === "rectangle") return a * b;
+      if(mode === "square") return a * a;
+      if(mode === "triangle") return (a * b) / 2;
+      if(mode === "circle") return 3.14 * a * a;
 
       return 0;
+    }
+
+    function svgText(x, y, text, cls = "shape-label", anchor = "middle"){
+      return `<text x="${x}" y="${y}" text-anchor="${anchor}" class="${cls}">${text}</text>`;
+    }
+
+    function drawRectangle(m2){
+      shapeLayer.innerHTML = `
+        <rect x="110" y="75" width="280" height="135" rx="18" class="shape-main"></rect>
+        ${svgText(250, 150, formatNumber(m2,3) + " m²", "shape-white")}
+        <line x1="110" y1="230" x2="390" y2="230" class="shape-line"></line>
+        <line x1="405" y1="75" x2="405" y2="210" class="shape-line"></line>
+        ${svgText(250, 255, "a", "shape-small-label")}
+        ${svgText(428, 150, "b", "shape-small-label")}
+      `;
+    }
+
+    function drawSquare(m2){
+      shapeLayer.innerHTML = `
+        <rect x="155" y="55" width="190" height="190" rx="18" class="shape-main"></rect>
+        ${svgText(250, 155, formatNumber(m2,3) + " m²", "shape-white")}
+        <line x1="155" y1="260" x2="345" y2="260" class="shape-line"></line>
+        <line x1="360" y1="55" x2="360" y2="245" class="shape-line"></line>
+        ${svgText(250, 278, "a", "shape-small-label")}
+        ${svgText(382, 153, "a", "shape-small-label")}
+      `;
+    }
+
+    function drawTriangle(m2){
+      shapeLayer.innerHTML = `
+        <polygon points="250,35 95,230 405,230" class="shape-main"></polygon>
+
+        <polygon points="250,35 235,230 265,230" fill="url(#hatch)" opacity="0.75"></polygon>
+
+        <line x1="95" y1="245" x2="405" y2="245" class="shape-line"></line>
+        <line x1="250" y1="35" x2="250" y2="230" class="shape-dash"></line>
+
+        <path d="M250 230 L270 230 L270 210" fill="none" stroke="#dc2626" stroke-width="3"></path>
+
+        ${svgText(250, 150, formatNumber(m2,3) + " m²", "shape-white")}
+        ${svgText(250, 270, "základna a", "shape-small-label")}
+        ${svgText(278, 130, "výška vₐ", "shape-small-label", "start")}
+      `;
+    }
+
+    function drawCircle(m2){
+      shapeLayer.innerHTML = `
+        <circle cx="250" cy="145" r="92" class="shape-main"></circle>
+
+        <line x1="250" y1="145" x2="342" y2="145" class="shape-line"></line>
+        <circle cx="250" cy="145" r="5" fill="#dc2626"></circle>
+
+        <path d="M250 145 L342 145 L332 138 M342 145 L332 152" fill="none" stroke="#dc2626" stroke-width="3"></path>
+
+        <path d="M250 145 A92 92 0 0 1 342 145 L250 145 Z" fill="url(#hatch)" opacity="0.55"></path>
+
+        ${svgText(250, 115, formatNumber(m2,3) + " m²", "shape-white")}
+        ${svgText(300, 135, "r", "shape-small-label")}
+        ${svgText(250, 265, "poloměr r,  π = 3,14", "shape-small-label")}
+      `;
     }
 
     function updateMode(){
@@ -587,8 +668,6 @@
       if(mode === "convert"){
         convertBox.style.display = "block";
         calcBox.style.display = "none";
-        dimA.textContent = "zadaná plocha";
-        dimB.textContent = "";
       } else {
         convertBox.style.display = "none";
         calcBox.style.display = "block";
@@ -611,13 +690,13 @@
       if(mode === "triangle"){
         labelA.textContent = "Základna a [m]:";
         labelB.textContent = "Výška vₐ [m]:";
-        calcHint.textContent = "Obsah trojúhelníku vypočítáme podle vzorce S = (a · vₐ) / 2.";
+        calcHint.textContent = "Obsah trojúhelníku vypočítáme podle vzorce S = (a · vₐ) / 2. Výška je v obrázku vyznačena červenou čárkovanou úsečkou a šrafováním.";
       }
 
       if(mode === "circle"){
         labelA.textContent = "Poloměr r [m]:";
         inputBBox.style.display = "none";
-        calcHint.textContent = "Obsah kruhu vypočítáme podle vzorce S = π · r².";
+        calcHint.textContent = "Obsah kruhu vypočítáme podle vzorce S = π · r². V této pomůcce používáme π = 3,14. Poloměr je v obrázku vyznačen červeně.";
       }
 
       update();
@@ -625,60 +704,22 @@
 
     function updateShape(m2){
       const mode = modeSelect.value;
-      let scale = Math.sqrt(Math.max(0, Math.min(m2, 10000))) / 100;
-      let percent = 25 + scale * 55;
-      percent = Math.max(25, Math.min(80, percent));
 
-      if(mode === "circle"){
-        areaShape.style.borderRadius = "50%";
-        areaShape.style.width = percent + "%";
-        areaShape.style.height = percent + "%";
-      } else if(mode === "triangle"){
-        areaShape.style.borderRadius = "0";
-        areaShape.style.width = "0";
-        areaShape.style.height = "0";
-        areaShape.style.background = "transparent";
-        areaShape.style.borderLeft = "85px solid transparent";
-        areaShape.style.borderRight = "85px solid transparent";
-        areaShape.style.borderBottom = "135px solid #2563eb";
-        areaShape.style.boxShadow = "none";
-        areaShape.textContent = "";
-        return;
-      } else {
-        areaShape.style.borderRadius = "18px";
-        areaShape.style.width = percent + "%";
-        areaShape.style.height = Math.max(28, percent * 0.62) + "%";
-      }
-
-      areaShape.style.background = "linear-gradient(135deg,#2563eb,#06b6d4)";
-      areaShape.style.border = "4px solid #ffffff";
-      areaShape.style.boxShadow = "0 12px 25px rgba(15,23,42,0.25)";
-      areaShape.textContent = formatNumber(m2, 3) + " m²";
+      if(mode === "square") drawSquare(m2);
+      else if(mode === "triangle") drawTriangle(m2);
+      else if(mode === "circle") drawCircle(m2);
+      else drawRectangle(m2);
     }
 
     function update(){
       const m2 = currentAreaM2();
       const mode = modeSelect.value;
 
-      display.textContent = `${formatNumber(m2, 6)} m²`;
-
       if(mode === "convert"){
         const value = parseFloat(valueInput.value) || 0;
         display.textContent = `${formatNumber(value, 6)} ${units[unitSelect.value].symbol}`;
-        dimA.textContent = "zadaná plocha";
-        dimB.textContent = formatNumber(m2, 4) + " m²";
-      } else if(mode === "rectangle"){
-        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
-        dimB.textContent = "b = " + formatNumber(parseFloat(inputB.value) || 0, 3) + " m";
-      } else if(mode === "square"){
-        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
-        dimB.textContent = "S = a²";
-      } else if(mode === "triangle"){
-        dimA.textContent = "a = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
-        dimB.textContent = "vₐ = " + formatNumber(parseFloat(inputB.value) || 0, 3) + " m";
-      } else if(mode === "circle"){
-        dimA.textContent = "r = " + formatNumber(parseFloat(inputA.value) || 0, 3) + " m";
-        dimB.textContent = "S = π · r²";
+      } else {
+        display.textContent = `${formatNumber(m2, 6)} m²`;
       }
 
       updateShape(m2);
@@ -724,3 +765,12 @@
   </script>
 </body>
 </html>
+"""
+
+(base / "index.html").write_text(html, encoding="utf-8")
+
+zip_path = Path("/mnt/data/plochy_prevody_web_oprava.zip")
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    z.write(base / "index.html", arcname="index.html")
+
+str(zip_path), str(base / "index.html")
